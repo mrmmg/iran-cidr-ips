@@ -42,8 +42,7 @@ jobs:
       # sing-box is used as the official parser for rule-set files
       - name: Download sing-box
         run: |
-          curl -Lo sing-box.tar.gz \
-            https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
+          curl -Lo sing-box.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
           tar -xzf sing-box.tar.gz
           sudo mv sing-box*/sing-box /usr/local/bin/sing-box
           sing-box version
@@ -52,8 +51,7 @@ jobs:
       # This file is maintained upstream and consumed by sing-box
       - name: Download GeoIP rule-set
         run: |
-          curl -Lo geoip-ir.srs \
-            https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs
+          curl -Lo geoip-ir.srs https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs
 
       # Decompile the binary SRS rule-set into JSON
       # The output includes ip_cidr, domain, and other rule types
