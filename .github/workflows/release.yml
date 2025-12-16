@@ -84,18 +84,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "${{ env.BUILD_TIME }}"
-          name: "Iran CIDR ${{ env.BUILD_TIME }}"
-          body: |
-            Automated Iran CIDR list generated from sing-box GeoIP rule-set.
-
-            Build time (UTC): ${{ env.BUILD_TIME }}
-
-            Contents:
-            - CIDR list (TXT)
-            - Full decompiled JSON (for transparency and auditing)
-
-            Special Thanks to https://github.com/Chocolate4U/Iran-sing-box-rules
-          files: |
-            iran-${{ env.BUILD_TIME }}.txt
-            geoip-ir.json
+            tag_name: "${{ env.BUILD_TIME }}"
+            name: "Iran CIDR ${{ env.BUILD_TIME }}"
+            files: |
+                iran-${{ env.BUILD_TIME }}.txt
+                geoip-ir.json
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
