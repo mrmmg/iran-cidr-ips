@@ -38,14 +38,27 @@ jobs:
         run: |
           echo "BUILD_TIME=$(date -u +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
 
-      # Download the latest sing-box binary
-      # sing-box is used as the official parser for rule-set files
+      # Download the latest sing-box release (tar.gz) using GitHub API
       - name: Download sing-box
         run: |
-          curl -Lo sing-box.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
+          # Get latest version tag from GitHub API
+          VERSION=$(wget -qO- https://api.github.com/repos/SagerNet/sing-box/releases/latest \
+            | jq -r '.tag_name')
+
+          echo "Latest sing-box version: $VERSION"
+
+          # Download the correct tar.gz asset
+          curl -Lo sing-box.tar.gz \
+            https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VERSION#v}-linux-amd64.tar.gz
+
+          # Extract and install
           tar -xzf sing-box.tar.gz
           sudo mv sing-box*/sing-box /usr/local/bin/sing-box
+          sudo chmod +x /usr/local/bin/sing-box
+
+          # Sanity check
           sing-box version
+
 
       # Download the binary GeoIP rule-set (SRS format)
       # This file is maintained upstream and consumed by sing-box
