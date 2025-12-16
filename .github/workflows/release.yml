@@ -1,0 +1,90 @@
+name: Build & Release Iran CIDR List
+
+# This workflow runs automatically:
+# - On a daily schedule
+# - Or manually via GitHub Actions UI
+on:
+  schedule:
+    - cron: "0 0 * * *"   # Run daily at 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout this repository
+      # Needed for scripts and project files
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install required system dependencies
+      # - curl: download external files
+      # - jq: parse JSON output
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+
+      # Generate a timestamp for this build
+      # Format: YYYY-MM-DD-HHMM
+      # Example: 2025-12-16-2007
+      #
+      # This value is reused for:
+      # - Output file names
+      # - Git tag
+      # - Release title
+      - name: Set build timestamp
+        run: |
+          echo "BUILD_TIME=$(date -u +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
+
+      # Download the latest sing-box binary
+      # sing-box is used as the official parser for rule-set files
+      - name: Download sing-box
+        run: |
+          curl -Lo sing-box.tar.gz \
+            https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
+          tar -xzf sing-box.tar.gz
+          sudo mv sing-box*/sing-box /usr/local/bin/sing-box
+          sing-box version
+
+      # Download the binary GeoIP rule-set (SRS format)
+      # This file is maintained upstream and consumed by sing-box
+      - name: Download GeoIP rule-set
+        run: |
+          curl -Lo geoip-ir.srs \
+            https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs
+
+      # Decompile the binary SRS rule-set into JSON
+      # The output includes ip_cidr, domain, and other rule types
+      - name: Decompile rule-set to JSON
+        run: |
+          sing-box rule-set decompile geoip-ir.srs > geoip-ir.json
+
+      # Extract all ip_cidr entries from the JSON output
+      # Generates a clean, sorted CIDR list
+      - name: Convert JSON to CIDR list
+        run: |
+          chmod +x scripts/json_to_txt.sh
+          scripts/json_to_txt.sh geoip-ir.json iran-${BUILD_TIME}.txt
+
+      # Create a new GitHub Release
+      # Each workflow run produces a timestamped release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ env.BUILD_TIME }}"
+          name: "Iran CIDR ${{ env.BUILD_TIME }}"
+          body: |
+            Automated Iran CIDR list generated from sing-box GeoIP rule-set.
+
+            Build time (UTC): ${{ env.BUILD_TIME }}
+
+            Contents:
+            - CIDR list (TXT)
+            - Full decompiled JSON (for transparency and auditing)
+
+            Special Thanks to https://github.com/Chocolate4U/Iran-sing-box-rules
+          files: |
+            iran-${{ env.BUILD_TIME }}.txt
+            geoip-ir.json
